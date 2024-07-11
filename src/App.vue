@@ -73,6 +73,7 @@
           <el-button type="primary" @click="sendFn" style="margin-left: 20px" :disabled="!input"
             >Send</el-button
           >
+          <el-icon :size="20" @click="playRecord"><Microphone /></el-icon>
         </div>
       </el-footer>
     </el-container>
@@ -82,8 +83,10 @@
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
 import MyLoading from './components/LoadingStyle.vue'
-
-import { ref, nextTick, onBeforeUnmount } from 'vue'
+import Recorder from 'js-audio-recorder'
+import Player from 'js-audio-recorder/src/player/player'
+import { requestWithFetch } from '@/util/fetch'
+import { ref, nextTick, onBeforeUnmount, onMounted, onUnmounted } from 'vue'
 
 const messageGroup = ref([])
 const isLoading = ref(false)
@@ -107,6 +110,33 @@ const shiftEnterKeyCodeFn = () => {
 }
 const emptyFn = () => {}
 const sendFn = async () => {}
+
+let recorder = null
+const playRecord = async () => {
+  let wavFile = await fetch('/wavs/LJ001-0001.wav')
+  let wavblob = await wavFile.blob()
+
+  // 播放音频
+  // let wavbuffer = await wavblob.arrayBuffer()
+  // Player.play(wavbuffer)
+  let data = new FormData()
+  data.append('file', wavblob, 'LJ001-0001.wav')
+  let res = await fetch('http://localhost:5000/SpeechToText', {
+    method: 'POST',
+    body: data
+  })
+  let resJson = await res.json()
+  input.value = resJson.message
+}
+onMounted(() => {
+  recorder = new Recorder()
+})
+
+onUnmounted(() => {
+  recorder.destroy().then(() => {
+    recorder = null
+  })
+})
 </script>
 <style lang="scss" scoped>
 .common-layout {
